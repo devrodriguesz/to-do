@@ -7,7 +7,7 @@ export default function App(){
   const [user, setUser] = useState(null);
 
   if (!user){
-    return <Login/>
+    return <Login changeStatus={(user)=> setUser(user)}/>
   }
   
   return(
