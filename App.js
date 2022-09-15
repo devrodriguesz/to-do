@@ -20,6 +20,10 @@ let tasks = [{
 {
   key: '2',
   nome: 'Estudar javascript'
+},
+{
+  key: '3',
+  nome: 'Estudar html'
 }]
 
 export default function App(){
@@ -29,7 +33,15 @@ export default function App(){
   if (!user){
     return <Login changeStatus={(user)=> setUser(user)}/>
   }
+
+  function handleDelete(key){
+    console.log(key);
+  }
   
+  function handleEdit(data){
+    console.log('Item clicado', data);
+  }
+
   return(
     <SafeAreaView style={styles.container}>
      
@@ -49,7 +61,7 @@ export default function App(){
       data={tasks}
       keyExtractor={(item)=> item.key}
       renderItem={({item})=>(
-        <TaskList data={item}/>
+        <TaskList data={item} deleteItem={handleDelete} editItem={handleEdit}/>
       )}
       
       />
