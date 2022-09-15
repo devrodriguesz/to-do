@@ -7,31 +7,46 @@ import {
   TextInput, 
   TouchableOpacity, 
   FlatList,
+  Keyboard
 
 } from 'react-native';
 
 import Login from './src/components/Login';
-import TaskList from './src/components/TaskList'
+import TaskList from './src/components/TaskList';
+import firebase from './src/services/firebaseConnection'
 
-let tasks = [{
-  key: '1',
-  nome: 'Comprar coca cola'
-},
-{
-  key: '2',
-  nome: 'Estudar javascript'
-},
-{
-  key: '3',
-  nome: 'Estudar html'
-}]
 
 export default function App(){
   const [user, setUser] = useState(null);
-  const [newTask, setNewTask] = useState('')
+  const [newTask, setNewTask] = useState('');
+  const [tasks, setTasks] = useState([]);
 
-  if (!user){
-    return <Login changeStatus={(user)=> setUser(user)}/>
+
+
+  function handleAdd(){
+    if(newTask ===''){
+      return;
+    }
+    
+    let tarefas = firebase.database().ref('tarefas').child(user);
+    let chave = tarefas.push().key;
+
+    tarefas.child(chave).set({
+      nome: newTask
+    }).then( ()=> {
+      const data={
+        key: chave,
+        nome: newTask
+      };
+      
+    setTasks(oldtasks => [...oldtasks, data])    
+    })
+
+    
+    Keyboard.dismiss();
+    setNewTask('');
+
+
   }
 
   function handleDelete(key){
@@ -40,6 +55,10 @@ export default function App(){
   
   function handleEdit(data){
     console.log('Item clicado', data);
+  }
+
+  if (!user){
+    return <Login changeStatus={(user)=> setUser(user)}/>
   }
 
   return(
@@ -52,7 +71,7 @@ export default function App(){
         onChangeText={(text)=> setNewTask(text)}
         value={newTask}
         />
-        <TouchableOpacity style={styles.botaoAdd}>
+        <TouchableOpacity style={styles.botaoAdd} onPress={handleAdd} >
           <Text style={styles.botaoText}>+</Text>
         </TouchableOpacity>
       </View>
