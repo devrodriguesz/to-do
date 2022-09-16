@@ -1,4 +1,4 @@
-import React, { useState, } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -11,20 +11,76 @@ import {
 
 } from 'react-native';
 
+
+
 import Login from './src/components/Login';
 import TaskList from './src/components/TaskList';
 import firebase from './src/services/firebaseConnection'
 
 
+
 export default function App(){
-  const [user, setUser] = useState(null);
-  const [newTask, setNewTask] = useState('');
+
+  const [key, setKey] = useState('');
+  const inputRef = useRef(null);
   const [tasks, setTasks] = useState([]);
+  const [newTask, setNewTask] = useState('');
+  const [user, setUser] = useState(null);
 
 
 
+  //buscar as tarefas que ja existem no banco de dados
+  useEffect(()=>{
+    function getUser(){
+      if(!user){
+        return;
+      }
+      
+      firebase.database().ref('tarefas').child(user).once('value', (snapshot)=>{
+        setTasks([]);
+
+        snapshot?.forEach((childItem)=>{
+          let data={
+            key: childItem.key,
+            nome: childItem.val().nome
+          }
+          
+          setTasks((oldTasks)=>[...oldTasks, data]);
+          
+        })
+      })
+
+    }
+
+    getUser();
+
+  },[user]);
+
+
+
+  // funçâo que cria um novo usuario e uma nova tarefa no banco de dados.
   function handleAdd(){
     if(newTask ===''){
+      return;
+    }
+
+    //Usuario edita uma tarefa
+    if(key!==''){
+      firebase.database().ref('tarefas').child(user).child(key).update({
+        nome: newTask
+      })
+      .then(()=>{
+        const taskIndex = tasks.findIndex( item=> item.key === key)
+        let taskClone = tasks;
+        taskClone[taskIndex].nome = newTask
+
+        setTasks([...taskClone]);
+
+      })
+
+      Keyboard.dismiss();
+      setNewTask('');
+      setKey('');
       return;
     }
     
@@ -39,27 +95,44 @@ export default function App(){
         nome: newTask
       };
       
-    setTasks(oldtasks => [...oldtasks, data])    
+    setTasks(oldTasks => [...oldTasks, data])    
     })
 
-    
     Keyboard.dismiss();
     setNewTask('');
 
-
-  }
-
-  function handleDelete(key){
-    console.log(key);
   }
   
-  function handleEdit(data){
-    console.log('Item clicado', data);
+
+
+  //funçâo que deleta uma tarefa
+  function handleDelete(key){
+    firebase.database().ref('tarefas').child(user).child(key).remove()
+    .then(()=>{
+      const findTasks = tasks.filter( item => item.key !== key)
+      setTasks(findTasks);
+    })
   }
 
+
+
+  //funçâo que edita a tarefa
+  function handleEdit(data){
+    setKey(data.key);
+    setNewTask(data.nome);
+    inputRef.current.focus();
+    
+  }
+
+
+
+  //condição se nãohouver usuário logado então, 
+  //troca o componente Login para o componente cadastrar usuario.  
   if (!user){
     return <Login changeStatus={(user)=> setUser(user)}/>
   }
+
+
 
   return(
     <SafeAreaView style={styles.container}>
@@ -70,6 +143,7 @@ export default function App(){
         placeholder= "Digite aqui uma tarefa"
         onChangeText={(text)=> setNewTask(text)}
         value={newTask}
+        ref={inputRef}
         />
         <TouchableOpacity style={styles.botaoAdd} onPress={handleAdd} >
           <Text style={styles.botaoText}>+</Text>

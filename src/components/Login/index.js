@@ -8,6 +8,8 @@ export default function Login( {changeStatus} ){
     const [password, setPassword] = useState('');
     const [type, setType] = useState('login');
 
+    //função faz a verificação do estado atual se há ou não usuário logado e,
+    //troca o estado dos botões de Acessar para Cadastrar.
     function handleLogin(){
         if(type==='login'){
           const user = firebase.auth().signInWithEmailAndPassword(email,password)
